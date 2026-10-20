@@ -10,9 +10,16 @@ import { env } from "env";
  * Localhost and per-PR previews reach the API cross-origin at VITE_API_URL.
  * Session cookies and OAuth are unaffected by which origin the data plane
  * uses - crossSubDomainCookies covers both.
+ *
+ * Self-hosted deployments on any other domain have no `api.<app-host>`, so
+ * they also use VITE_API_URL.
  */
 export function getApiOrigin(): string {
-    const isPreview = isPreviewHostname(window.location.hostname, env.VITE_INTERNAL_DOMAIN);
-    const isLocalhost = window.location.hostname === "localhost";
-    return isPreview || isLocalhost ? env.VITE_API_URL : `https://api.${window.location.hostname}`;
+    const hostname = window.location.hostname;
+    const isPreview = isPreviewHostname(hostname, env.VITE_INTERNAL_DOMAIN);
+    const isLocalhost = hostname === "localhost";
+    const isInternalDomainHost =
+        hostname === env.VITE_INTERNAL_DOMAIN || hostname.endsWith(`.${env.VITE_INTERNAL_DOMAIN}`);
+    const usesConfiguredApiUrl = isPreview || isLocalhost || !isInternalDomainHost;
+    return usesConfiguredApiUrl ? env.VITE_API_URL : `https://api.${hostname}`;
 }
