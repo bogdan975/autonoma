@@ -3,9 +3,6 @@
 FROM node:24-slim AS build
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates openssl && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
-# pnpm re-verifies dependencies before every `pnpm run`; inside a turbo build that makes
-# each package task reinstall in parallel, and the concurrent Prisma generates collide.
-ENV pnpm_config_verify_deps_before_run=false npm_config_verify_deps_before_run=false
 WORKDIR /app
 COPY . .
 RUN pnpm install --frozen-lockfile
@@ -18,7 +15,11 @@ ARG VITE_TEMPORAL_URL
 ARG VITE_SENTRY_DSN
 ARG VITE_SENTRY_URL
 ARG VITE_POSTHOG_KEY
-RUN pnpm turbo run build --filter=@autonoma/ui
+# Call vite directly rather than through `pnpm run` / turbo: pnpm re-verifies and reinstalls
+# dependencies before each script, and the parallel reinstalls collide inside this build.
+# Workspace packages export TypeScript source, so nothing else needs building first.
+WORKDIR /app/apps/ui
+RUN ./node_modules/.bin/vite build
 
 FROM nginx:alpine
 COPY apps/ui/nginx.conf.template /etc/nginx/templates/default.conf.template
