@@ -137,6 +137,10 @@ export const env = createEnv({
         // environment with OPENROUTER_API_KEY set must NOT silently become a free,
         // unmetered LLM gateway. Metering only happens when STRIPE_ENABLED is also on.
         LLM_PROXY_ENABLED: z.stringbool().default(false),
+        // Self-hosted escape hatch: mount the proxy with STRIPE_ENABLED=false, unmetered. Only for
+        // a deployment whose operator pays the OpenRouter bill for their own users anyway - it makes
+        // every authenticated org an uncapped LLM gateway on OPENROUTER_API_KEY.
+        LLM_PROXY_ALLOW_UNMETERED: z.stringbool().default(false),
         // Comma-separated allowlist of OpenRouter model ids the managed LLM proxy
         // (planner CLI) may request. Defaults to the single model the planner uses
         // (see LLM_PROXY_DEFAULT_MODELS in llm-proxy-http.router.ts). Set to

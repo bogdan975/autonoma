@@ -184,7 +184,11 @@ export function createApiApp() {
     // makes "the proxy is always metered" an invariant and fails closed - a
     // billing-disabled environment can never become a free, unmetered gateway.
 
+    const isUnmeteredProxyAllowed = env.LLM_PROXY_ENABLED && !env.STRIPE_ENABLED && env.LLM_PROXY_ALLOW_UNMETERED;
     if (env.LLM_PROXY_ENABLED && env.STRIPE_ENABLED) {
+        app.route("/v1/llm-proxy", llmProxyHttpRouter);
+    } else if (isUnmeteredProxyAllowed) {
+        logger.warn("LLM proxy mounted UNMETERED (LLM_PROXY_ALLOW_UNMETERED=true, STRIPE_ENABLED=false)");
         app.route("/v1/llm-proxy", llmProxyHttpRouter);
     } else if (env.LLM_PROXY_ENABLED && !env.STRIPE_ENABLED) {
         logger.error(
