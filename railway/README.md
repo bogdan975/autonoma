@@ -2,7 +2,7 @@
 
 This deploys the core platform plus test execution:
 
-| Railway service   | Source                                     | Config file                    | Public domain |
+| Railway service   | Source                                     | Settings (reference)           | Public domain |
 |-------------------|--------------------------------------------|--------------------------------|---------------|
 | `Postgres`        | Railway Postgres template                  | -                              | no            |
 | `Redis`           | Railway Redis template                     | -                              | no            |
@@ -27,7 +27,11 @@ assume exactly these names.
 4. For each of `api`, `ui`, `worker-general`, `worker-web`: **+ Create → GitHub Repo** →
    your fork, rename the service, then in **Settings**:
    - **Root Directory**: leave empty (repo root - every image builds from the whole monorepo)
-   - **Config-as-code → Railway Config File**: `/railway/<service>.json` (from the table)
+   - **Build → Dockerfile Path** and the deploy settings listed in the matching
+     `railway/<service>.json`. Railway no longer accepts `railway.json` config files, so those
+     files only document the settings; apply them in the dashboard or with
+     `railway api 'mutation { serviceInstanceUpdate(...) }'`. Also set the variable
+     `RAILWAY_DOCKERFILE_PATH` to the same Dockerfile path.
 5. For `api` and `ui`: **Settings → Networking → Generate Domain** (target ports 4000 and 3000).
 
 ## 2. Variables

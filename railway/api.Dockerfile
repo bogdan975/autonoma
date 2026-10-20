@@ -5,6 +5,9 @@ FROM node:24-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates openssl && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
+# pnpm re-verifies dependencies before every `pnpm run`; inside a turbo build that makes
+# each package task reinstall in parallel, and the concurrent Prisma generates collide.
+ENV pnpm_config_verify_deps_before_run=false npm_config_verify_deps_before_run=false
 
 WORKDIR /app
 COPY . .
