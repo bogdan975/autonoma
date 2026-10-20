@@ -23,8 +23,17 @@ RUN ./node_modules/.bin/vite build
 
 FROM nginx:alpine
 COPY apps/ui/nginx.conf.template /etc/nginx/templates/default.conf.template
+# The template resolves API_UPSTREAM once at startup, so after every api redeploy (new private
+# IP) the proxy keeps dialing the dead address and /v1/* hangs. Route it through a variable
+# with a resolver instead, so nginx re-resolves the name; the image's local-resolvers
+# entrypoint fills NGINX_LOCAL_RESOLVERS from /etc/resolv.conf.
+RUN sed -i \
+      -e 's|proxy_pass http://${API_UPSTREAM};|proxy_pass http://$api_upstream;|' \
+      -e 's|^\(\s*listen 3000;\)|\1\n    listen [::]:3000;\n    resolver ${NGINX_LOCAL_RESOLVERS} valid=10s;\n    set $api_upstream ${API_UPSTREAM};|' \
+      /etc/nginx/templates/default.conf.template
+ENV NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
 COPY --from=build /app/apps/ui/dist/ /usr/share/nginx/html/
 EXPOSE 3000
 # API_UPSTREAM (host:port of the API on Railway's private network) is substituted
 # into the template at container start.
-ENV NGINX_ENVSUBST_FILTER=API_UPSTREAM
+ENV NGINX_ENVSUBST_FILTER=API_UPSTREAM|NGINX_LOCAL_RESOLVERS
